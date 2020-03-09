@@ -1,0 +1,66 @@
+LVM role
+---
+# tasks file for lvm
+#- name: Create partitions
+#  become: yes
+#  parted:
+#    device: /dev/sde
+#    state: present
+#    number: "{{ item.index }}"
+#    part_start: "{{ item.start }}GiB + 0.1GiB"
+#    part_start: "{{ (item.start | int | abs) * 1 + 0.1 }}GiB"
+#    part_end: "{{ (item.end | int | abs) + 0.1 }}GiB"
+#    align: none
+#    number: "{{ item.index }}"
+#    part_start: "{{ (item.start | int | abs) * 20971520 + 2048 }}KiB"
+#    part_end: "{{ (item.end | int | abs) * 20971520 + 20971519 }}KiB"
+#    unit: GB
+#  debug:
+#    msg: " first = {{ item[0] }} second = {{ item[1] }} third = {{ item[2] }} "
+#    msg: " first = {{ item.index }} second = {{ item.start }} third = {{ item.end }} "
+#  loop: "{{ query('nested', [ 1, '0', '10' ], [ 2, '10', '20' ], [ 3, '20', '30']) }}"
+#  with_items:
+#    - [ 1, '0', '10' ]
+#    - [ 2, '10', '20' ]
+#    - [ 3, '20', '30' ]
+#  with_items:
+#    - { index: 1, start: 0, end: 10 }
+#    - { index: 2, start: 10, end: 20 }
+#    - { index: 3, start: 20, end: 30 }
+- name: Create volume group
+#  become: yes
+  lvg:
+    vg: vgans01
+    pvs: /dev/sde1,/dev/sde2,/dev/sde3
+
+- name: Create logical volumes
+  lvol:
+    vg: vgans01
+    lv: "{{ item }}"
+    size: 13g
+  loop:
+    - lvans01
+    - lvans02
+- name: Create xfs filesystem
+  filesystem:
+    fstype: xfs
+    dev: "/dev/vgans01/{{ item }}"
+  loop:
+    - lvans01
+    - lvans02
+- name: make directories
+  file:
+    path: "/{{ item }}"
+    state: directory
+  loop:
+    - dir01
+    - dir02
+- name: mount directories
+  mount:
+    path: "/{{ item.dir }}"
+    fstype: xfs
+    src: "/dev/vgans01/{{ item.lv }}"
+    state: mounted
+  loop:
+    - { dir: 'dir01', lv: 'lvans01'}
+    - { dir: 'dir02', lv: 'lvans02'}

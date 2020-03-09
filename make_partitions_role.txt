@@ -1,0 +1,20 @@
+---
+# tasks file for raids
+#- name: install mdadm
+#  yum:
+#    name: mdadm
+#    state: present
+- name: make partitions
+#  debug:
+#    msg: " /dev/sd{{ item.0 }} index {{ item.1 }}"
+  parted:
+    part_start: "{{ ((item.1 | int -1 )* 25)|abs }}%"
+    part_end: "{{ (item.1 | int * 25)|abs }}%"
+#    part_end: "{{ item.1|int  }} *25"%
+    device: "/dev/sd{{ item.0 }}"
+    number: "{{ item.1 }}"
+    state: present
+    unit: "%"
+  with_nested:
+    - "{{ disk_list.split(',') }}"
+    - "{{ index_list.split(',') }}"

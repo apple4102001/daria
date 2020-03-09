@@ -1,0 +1,49 @@
+role:
+---
+# tasks file for create_raid
+- name: install mdadm
+  yum:
+    name: mdadm
+    state: present
+
+- name: create raid
+  shell:
+    cmd: "mdadm --create {{ raid_path }} --level={{ raid_level }} --raid-devices={{ disk_sum }} {{ disk_list }}"
+    stdin: y
+
+- name: print raid details
+  shell: "mdadm --detail {{ raid_path }}"
+  register: details
+- debug:
+    var: details.stdout_lines
+
+playbook:
+---
+- hosts: servers
+  vars_prompt:
+    - name: disk_sum
+      prompt: "Enter number of disks"
+      private: no
+    - name: disk_list
+      prompt: "Enter disks"
+      private: no
+    - name: raid_level
+      prompt: "Enter raid level (number)"
+      private: no
+    - name: raid_path
+      prompt: "Enter raid path"
+      private: no
+#    - name: index_list
+#      prompt: "Enter index array"
+#      private: no
+#  tasks:
+#    - debug:
+#        msg: "disk is {{ disk }} "
+#  tasks:
+#    - set_fact:
+#        - disk_list: "{{ disk.split(',') }}"
+#        - index_list: "{{ index.split(',') }}"
+  roles:
+    - create_raid
+  become: yes
+
